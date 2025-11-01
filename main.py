@@ -1,16 +1,20 @@
-# This is a sample Python script.
+# Imports
+import numpy as np
+import pandas as pd
 
-# Press Umschalt+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Reading Data
+train_set = pd.read_csv('data/Train.csv')
+test_set = pd.read_csv('data/Test.csv')
 
+# Overview on the data
+print("TRAIN DATA #########################")
+print(train_set.info())
+print("TEST DATA #########################")
+print(test_set.info())
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Strg+F8 to toggle the breakpoint.
+# Access to columns + Conversion to Np-Array
+power_data_train = np.array(train_set['Power'])
+wind_data_train = np.array(train_set['WS_100m'])
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+print("Power Data Shape: ", power_data_train.shape)
+print("Wind Data Shape: ", wind_data_train.shape)
