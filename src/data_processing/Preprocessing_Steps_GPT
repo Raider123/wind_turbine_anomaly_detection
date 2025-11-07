@@ -1,0 +1,137 @@
+1️⃣ Fehlende Werte behandeln
+
+Warum: LSTM kann NaNs nicht verarbeiten. Jede fehlende Zahl bricht das Training.
+
+Was tun:
+
+Zeilen löschen
+
+oder Werte auffüllen (z. B. Mittelwert, Median, Forward/Backward Fill)
+
+Alternativen: Interpolation (linear, spline), Rolling-Werte, domain-spezifische Füllung
+
+➡️ Tipp zum Start: Prüfe zuerst, wie viele NaNs pro Spalte vorhanden sind, um zu entscheiden, welche Strategie sinnvoll ist.
+
+
+
+
+2️⃣ Feature-Auswahl
+
+Warum: LSTM lernt besser, wenn irrelevante Spalten (IDs, Zeitstempel, Kategorien) entfernt werden.
+
+Was tun:
+
+Sensorwerte isolieren
+
+Zeitinformationen ggf. in Sinus/Cosinus umwandeln (z. B. für Zykluszeiten)
+
+Alternativen: Feature-Engineering: differenzen der Sensorwerte, gleitender Mittelwert, Ratios
+
+➡️ Tipp: Beginne mit den wichtigsten kontinuierlichen Sensorwerten, bevor du komplexes Engineering machst.
+
+
+
+
+3️⃣ Normalisierung / Skalierung
+
+Warum: LSTM-Training wird instabil, wenn Features stark unterschiedliche Skalen haben.
+
+Was tun:
+
+MinMax-Scaling (0–1)
+
+Standardisierung (mean=0, std=1)
+
+Alternativen: RobustScaler (gegen Ausreißer), Log-Transformation bei stark schiefen Verteilungen
+
+➡️ Tipp: Trainiere den Scaler nur auf Trainingsdaten und wende ihn auf Testdaten an.
+
+
+
+
+4️⃣ Sequenzbildung
+
+Warum: LSTM verarbeitet zeitliche Abhängigkeiten – du musst also Sequenzen aus den Rohdaten bauen.
+
+Was tun:
+
+Fenster über die Zeit (z. B. 30 Zeitschritte)
+
+Jede Sequenz wird Input und Label für Autoencoder sein (bei Anomaly Detection meist Input=Label)
+
+Alternativen: Variable Sequenzlänge, Sliding Window mit Schrittweite > 1
+
+➡️ Tipp: Experimentiere mit verschiedenen Sequenzlängen – zu kurz → kein Kontext, zu lang → Training wird langsamer.
+
+
+
+
+5️⃣ Umgang mit Ausreißern
+
+Warum: Extreme Werte können LSTM-Ausgaben verzerren.
+
+Was tun:
+
+Clippen
+
+Entfernen
+
+RobustScaler verwenden
+
+Alternativen: Winsorization, Transformieren (z. B. log)
+
+➡️ Tipp: Schau dir die Verteilungen einzelner Sensoren an – oft fallen Ausreißer sofort auf.
+
+
+
+
+6️⃣ Optional: Datenaugmentation
+
+Warum: Mehr Daten = stabileres Modell.
+
+Was tun:
+
+Kleine Zufallsrauschen hinzufügen
+
+Zeitliche Verschiebungen
+
+Alternativen: SMOTE-artige Methoden für Zeitreihen, Synthetische Sequenzen
+
+
+
+
+7️⃣ Optional: Feature-Engineering
+
+Warum: LSTM lernt besser mit sinnvollen Features.
+
+Was tun:
+
+Gleitende Mittelwerte / Rolling Stats
+
+Differenzen zwischen aufeinanderfolgenden Werten
+
+Kombination mehrerer Sensoren
+
+Empfohlene Reihenfolge zum Implementieren
+
+Fehlende Werte behandeln → unbedingt zuerst
+
+Feature-Auswahl → IDs, Zeitstempel raus
+
+Skalierung / Normalisierung
+
+Sequenzbildung für LSTM
+
+Ausreißerbehandlung (vor oder nach Skalierung möglich)
+
+Optional: Datenaugmentation
+
+Optional: Feature-Engineering
+
+
+
+
+
+💡 Merksatz:
+
+„Erst Daten sauber machen, dann skalieren, dann Sequenzen bauen, dann experimentieren.“
