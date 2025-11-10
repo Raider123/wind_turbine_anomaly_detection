@@ -3,33 +3,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def missing_data_handle(dataset: pd.DataFrame):
-    return
-
-def feature_selection(dataset: pd.DataFrame):
-    return
-
-def outlier_handling(dataset: pd.DataFrame):
-    return
-
-def feature_normalizing(dataset: pd.DataFrame):
-    return
-
-def build_sequences(dataset: pd.DataFrame):
-    return
-
-def preprocess_dataset(dataset: pd.DataFrame):
-
-    ## Handle missing data -> data is complete, so no further process needed
+def data_cleanup(dataset: pd.DataFrame):
+    # Handle missing data -> data is complete, so no further process needed
     count_nans = len(dataset) - len(dataset.dropna())
     print("Number of NaNs in this dataset:", count_nans)
 
+    # check for duplicate rows -> No duplicate rows, so no further cleanup process needed
+    print("Number of duplicate rows: ", dataset.duplicated().sum())
+    print("Number of rows with duplicate timestamp and location: ", dataset[["Time", "Location"]].duplicated().sum())
+    return dataset
+
+def feature_selection(dataset: pd.DataFrame):
     ##### Feature selection #####
     # Delete the Unnamed: 0 column
     dataset = dataset.drop("Unnamed: 0", axis=1)
-    print(dataset.columns.tolist())
+    return dataset
 
-
+def outlier_handling(dataset: pd.DataFrame):
     ##### Handle outliers ##### 
     ### INFO: We decide not to clip the outliers since they seem to be natural and not due to sensor defects -> Clipping them would lead to weaker predictions
     # We handle the outliers by getting the value at which 1% and 99% of the data lie. 
@@ -51,8 +41,20 @@ def preprocess_dataset(dataset: pd.DataFrame):
     #     sns.boxplot(x=dataset[col])
     #     plt.title(col)
     #     plt.show()
+    return dataset
 
+def feature_normalizing(dataset: pd.DataFrame):
+    ##### Normalize/Scale #####
+
+    # Standardization for Features -> "Temp_2m","RelHum_2m","DP_2m","WS_10m","WS_100m","WG_10m","Wind_Shear","Felt_Temp","Year" 
+    scalable_features = ["Temp_2m","RelHum_2m","DP_2m","WS_10m","WS_100m","WG_10m","Wind_Shear","Felt_Temp","Year"]
+    dataset[scalable_features] = (dataset[scalable_features] - dataset[scalable_features].mean()) / dataset[scalable_features].std()
+    return dataset
+
+
+def feature_engineering(dataset: pd.DataFrame):
     ##### Feature engineering #####
+
     # Since we have a WD in degrees, we have the issue that 359 and 1 degree are far apart 
     # We can use sin and cos -> This way we will have similar sin and cos results for 359 and 1 degree, which will improve the training
     # This means: For each WD column, we will replace it with two columns (sin and cos equivalents to represent the WD
@@ -63,7 +65,7 @@ def preprocess_dataset(dataset: pd.DataFrame):
     dataset["Cos_WD_100m"] = np.cos(np.deg2rad(dataset["WD_100m"]))
     dataset = dataset.drop(columns = ["WD_10m", "WD_100m"])
 
-    # Now we can also make use of sin and cos to transfor the Time Objects into sin cos features
+    # Now we can also make use of sin and cos to transform the time objects into sin cos features
     # Reason 1: days, months, hours and mins are all cyclical -> Hour 23 and Hour 1 are closer together as sin cos equivalents (like for wind directions)
     # Reason 2: Doing the same with one hot encoding would create date with high dimensions -> the approach with sin and cos does not
     dataset["Time"] = pd.to_datetime(dataset["Time"], format="%d-%m-%Y %H:%M")
@@ -82,9 +84,6 @@ def preprocess_dataset(dataset: pd.DataFrame):
     dataset["Cos_Month"] = np.cos(2 * np.pi * month / 12)
     dataset["Year"] = year
     dataset = dataset.drop(columns=["Time"])
-    # Uncomment before training
-    # dataset = dataset.drop(columns=["Time"]) 
-    # print(dataset[["Time","Sin_hour", "Cos_hour", "Sin_day", "Cos_day", "Sin_month", "Cos_month", "Year"]])
 
     # Location one hot encoding
     dataset = pd.get_dummies(dataset, columns=["Location"], prefix="Location")
@@ -95,20 +94,34 @@ def preprocess_dataset(dataset: pd.DataFrame):
 
     # temp x relhum -> Felt temperature -> has influence on power generation ability
     dataset["Felt_Temp"] = dataset["Temp_2m"] * dataset["RelHum_2m"]
-    
 
-    ##### Normalize/Scale #####
-    # Standardization for Features -> "Temp_2m","RelHum_2m","DP_2m","WS_10m","WS_100m","WG_10m","Wind_Shear","Felt_Temp","Year" 
-    scalable_features = ["Temp_2m","RelHum_2m","DP_2m","WS_10m","WS_100m","WG_10m","Wind_Shear","Felt_Temp","Year"]
-    dataset[scalable_features] = (dataset[scalable_features] - dataset[scalable_features].mean()) / dataset[scalable_features].std()
+    return dataset
 
-    ##### Build sequences #####
+def build_sequences(dataset: pd.DataFrame, sequence_len: int):
+    ##### Build sliding window sequences #####
+    all_x = dataset.drop(columns= ["Power"]).values
+    sequence_y = dataset["Power"].values
 
-    
+    X, y = [], []
+    for datapoint in range(len(all_x) - sequence_len):
+        X.append(all_x[datapoint : datapoint + sequence_len])
+        y.append(sequence_y[datapoint : datapoint + sequence_len])
+    return np.array(X), np.array(y)
 
-
+def preprocess_dataset(dataset: pd.DataFrame):
+    dataset = data_cleanup(dataset)
+    dataset = feature_selection(dataset)
+    dataset = outlier_handling(dataset)
+    dataset = feature_engineering(dataset)
+    dataset = feature_normalizing(dataset)
+    X, y = build_sequences(dataset, 5)
+    return X, y
 
 train_set = pd.read_csv(r"D:\Coding Projects\Machine Learning Projects\wind_turbine_anomaly_detection\data\Train.csv")
 test_set = pd.read_csv(r"D:\Coding Projects\Machine Learning Projects\wind_turbine_anomaly_detection\data\Test.csv")
 
-preprocess_dataset(train_set)
+X, y = preprocess_dataset(train_set)
+print("Shape of X:", X.shape)
+print("Shape of y:", y.shape)
+print("X:", X)
+print("y:", y)
