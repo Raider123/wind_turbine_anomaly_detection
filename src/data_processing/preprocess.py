@@ -3,7 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# This section is for handling NaNs in the data
+def missing_data_handle(dataset: pd.DataFrame):
+    return
+
+def feature_selection(dataset: pd.DataFrame):
+    return
+
+def outlier_handling(dataset: pd.DataFrame):
+    return
+
+def feature_normalizing(dataset: pd.DataFrame):
+    return
+
+def build_sequences(dataset: pd.DataFrame):
+    return
 
 def preprocess_dataset(dataset: pd.DataFrame):
 
@@ -17,30 +30,37 @@ def preprocess_dataset(dataset: pd.DataFrame):
     print(dataset.columns.tolist())
 
 
-    ##### Handle outliers #####
-    print(dataset.info())
+    ##### Handle outliers ##### 
+    ### INFO: We decide not to clip the outliers since they seem to be natural and not due to sensor defects -> Clipping them would lead to weaker predictions
     # We handle the outliers by getting the value at which 1% and 99% of the data lie. 
+    # Maybe for future: Use RobustScaler -> May work well with natural occuring outliers
     # Every value which is above the 99% and below the 1% will get the value for lower_quantile and upper_quantile 
-    outliercheck_features = ["Temp_2m", "RelHum_2m", "DP_2m", "WS_10m", "WS_100m", "WG_10m", "Power"]
-    for col in outliercheck_features:
-        lower_quantile = dataset[col].quantile(0.01)
-        upper_quantile = dataset[col].quantile(0.99)
-        dataset[col] = dataset[col].clip(lower_quantile, upper_quantile)
+    # outliercheck_features = ["Temp_2m", "RelHum_2m", "DP_2m", "WS_10m", "WS_100m", "WG_10m", "Power"]
+    # for col in outliercheck_features:
+    #     lower_quantile = dataset[col].quantile(0.01)
+    #     upper_quantile = dataset[col].quantile(0.99)
+    # #     dataset[col] = dataset[col].clip(lower_quantile, upper_quantile)
+    # count_lower = (dataset[col] < lower_quantile).sum()
+    # count_upper = (dataset[col] > upper_quantile).sum()
+    # print("Count lower:", count_lower)
+    # print("Count upper:",count_upper)
+    # print("Count all:", len(dataset))
     # Boxplot visualization of the features in outliercheck_features
-    for col in outliercheck_features:
-        plt.figure(figsize=(6,3))
-        sns.boxplot(x=dataset[col])
-        plt.title(col)
-        plt.show()
+    # for col in outliercheck_features:
+    #     plt.figure(figsize=(6,3))
+    #     sns.boxplot(x=dataset[col])
+    #     plt.title(col)
+    #     plt.show()
 
     ##### Feature engineering #####
     # Since we have a WD in degrees, we have the issue that 359 and 1 degree are far apart 
     # We can use sin and cos -> This way we will have similar sin and cos results for 359 and 1 degree, which will improve the training
     # This means: For each WD column, we will replace it with two columns (sin and cos equivalents to represent the WD
-    dataset["Sin_WD_10m"] = np.sin(dataset["WD_10m"])
-    dataset["Cos_WD_10m"] = np.cos(dataset["WD_10m"])
-    dataset["Sin_WD_100m"] = np.sin(dataset["WD_100m"])
-    dataset["Cos_WD_100m"] = np.cos(dataset["WD_100m"])
+    print(dataset["WD_10m"])
+    dataset["Sin_WD_10m"] = np.sin(np.deg2rad(dataset["WD_10m"]))
+    dataset["Cos_WD_10m"] = np.cos(np.deg2rad(dataset["WD_10m"]))
+    dataset["Sin_WD_100m"] = np.sin(np.deg2rad(dataset["WD_100m"]))
+    dataset["Cos_WD_100m"] = np.cos(np.deg2rad(dataset["WD_100m"]))
     dataset = dataset.drop(columns = ["WD_10m", "WD_100m"])
 
     # Now we can also make use of sin and cos to transfor the Time Objects into sin cos features
